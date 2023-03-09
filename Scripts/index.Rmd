@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     fig_mobile: TRUE
     social: [ "twitter", "facebook", "linkedin" ]
-    logo: /Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Images/IRT-logo.jpg
+    logo: /Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Images/IRT-logo.jpg
     theme:
       bootswatch: minty
       base_font:
@@ -72,7 +72,7 @@ server <- function(input, output, session) {
           title = "Symbol Definitions",
           tags$head(tags$style("#shiny-modal img {max-width: 100%;}")),
            tags$img(
-            src = base64enc::dataURI(file = "/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Images/2023-02-28_14-10-27.jpg", mime = "image/jpeg"),
+            src = base64enc::dataURI(file = "/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Images/2023-02-28_14-10-27.jpg", mime = "image/jpeg"),
             alt = "Table with statistical symbols"),
           easyClose = TRUE,
           footer = NULL
@@ -97,14 +97,14 @@ shinyApp(ui = ui, server = server)
 
 ### Resources
 
-\[Implementation of IRT in the Classroom\](<https://www.researchgate.net/publication/333399406_Determining_Test_Length_Precision_for_Economics_Testing_The_Implementation_of_IRT_Model_for_Classroom_Assessment)>
+[Implementation of IRT in the Classroom](https://www.researchgate.net/publication/333399406_Determining_Test_Length_Precision_for_Economics_Testing_The_Implementation_of_IRT_Model_for_Classroom_Assessment)
 
 Simulated Data File
 
 ```{r}
 # embed a single file
 
-xfun::embed_file('/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Data/irtSIM.csv')
+xfun::embed_file('/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Data/irtSIM.csv')
 ```
 
 ## Interpreting Data {.tabset data-width="650"}
