@@ -7,14 +7,19 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(pacman)
+
+pacman::p_load(devtools, BiocManger, irtoys, coda, mirt, tidyverse)
 ```
 
 ```{r}
-install.packages("irtoys")
+# install.packages("devtools")
+devtools::install_github("philchalmers/mirt")
 ```
 
 ```{r}
-library(irtoys)
+library(mirt)
 ```
 
 ## Exploring how the function works
@@ -32,21 +37,73 @@ head(rs)
 Simulated Dichotomous Data
 ```{r}
 #item discrimination (needs to be fixed to 1 for Rasch model), item difficulty, and number of items
+set.seed(5878)
 iSim1 <- cbind(runif(20,1,1), runif(20,0,1), rep(0,20))
 head(pa)
 ```
 
 ```{r}
+set.seed(5878)
 iSim2 <- irtoys::sim(ip=iSim1, x=rnorm(30))
 head(iSim2)
 ```
 
 ```{r}
-write.matrix(iSim2,file="irtSIM.csv")
+#write.matrix(iSim2,file="irtSIM.csv")
 ```
 
 
 ```{r}
-simD <- read.csv("/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Data/irtSIM.csv", sep = " ")
+#simD <- read.csv("/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Data/irtSIM.csv", sep = " ")
 ```
+
+IRT Analysis
+
+```{r}
+#rename columns for plotting
+colnames(iSim2) <- c("Item 1","Item 2","Item 3","Item 4","Item 5","Item 6","Item 7","Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14", "Item 15", "Item 16", "Item 17", "Item 18", "Item 19", "Item 20")
+
+head(iSim2)
+```
+
+
+```{r}
+unimodel <- mirt.model("latent = 1-20")
+
+fitRa <- mirt::mirt(data = iSim2,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # stops from printing the iterations
+fitRa
+```
+
+```{r}
+summary(fitRa)
+```
+
+```{r}
+paramsRa <- coef(fitRa, IRTpars = TRUE, simplify = TRUE, nfact = 1)
+round(paramsRa$items, 2) # g = c = guessing parameter
+```
+
+```{r}
+coef.rasch <- coef(fitRa, IRTpars=TRUE, simplify=TRUE)
+
+items.rasch <- as.data.frame(coef.rasch$items)
+
+print(as.table(items.rasch))
+```
+
+```{r}
+# IRT parameters from the estimated model. For this example, we are obtaining simplified output without SEs/CIs (simplify = TRUE) for conventional IRT parameters (IRTpar = TRUE).
+coef(fitRa,simplify = TRUE, IRTpar = TRUE)$items
+```
+
+
+```{r}
+M2(fitRa)
+```
+
+
+
 

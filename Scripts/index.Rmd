@@ -25,7 +25,7 @@ runtime: shiny
 library(flexdashboard)
 library(pacman)
 
-pacman::p_load("knitr", "TAM", "WrightMap", "RColorBrewer", "ltm", "psych", "flexdashboard", "leaflet", thematic, shiny, shinyalert, irtoys, xtable, tinytex, xfun, plotly, ShinyItemAnalysis)
+pacman::p_load("knitr", "TAM", "WrightMap", "RColorBrewer", "ltm", "psych", "flexdashboard", "leaflet", thematic, shiny, shinyalert, irtoys, xtable, tinytex, xfun, plotly, ShinyItemAnalysis, coda, mirt)
 
 thematic::thematic_rmd()
 ```
@@ -84,8 +84,6 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui = ui, server = server)
-
-
 ```
 
 ### Assumptions
@@ -128,9 +126,9 @@ Rmodel <- tam(iSim2)
 ```
 
 ```{r f1, include=FALSE}
-Fit <- tam.fit(Rmodel)
+FitRM <- tam.fit(Rmodel)
 
-summary(Fit)
+summary(FitRM)
 ```
 
 ```{r Pability, include=FALSE}
@@ -144,6 +142,11 @@ Tthresh <- tam.threshold(Rmodel)
 ### IRT Analysis
 
 Running the TAM package in R provides the following output.
+
+```{r}
+
+```
+
 
 ```{r}
 Rmodel
@@ -160,8 +163,13 @@ range(Fit$itemfit$Infit)
 Item Characteristic Curve (ICC) for Items 1-20
 
 ```{r}
-plot(Rmodel)
+plot(Rmodel$item$I1)
 ```
+
+```{r}
+coda::traceplot(Rmodel, facet = F, legend = T) + scale_color_brewer(palette = "Set3")
+```
+
 
 ### Wright Map
 
