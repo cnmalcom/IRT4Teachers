@@ -10,36 +10,20 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(pacman)
 
-pacman::p_load(devtools, BiocManger, irtoys, coda, mirt, tidyverse)
+pacman::p_load(devtools, irtoys, coda, mirt, ggmirt, tidyverse,eRm)
 ```
 
 ```{r}
 # install.packages("devtools")
-devtools::install_github("philchalmers/mirt")
-```
-
-```{r}
-library(mirt)
-```
-
-## Exploring how the function works
-
-```{r}
-pa <- cbind(runif(20,.8,2), runif(20,-2.4,2.4), rep(0,50))
-head(pa)
-```
-
-```{r}
-rs <- irtoys::sim(ip=pa, x=rnorm(1000))
-head(rs)
+# devtools::install_github("philchalmers/mirt")
 ```
 
 Simulated Dichotomous Data
 ```{r}
-#item discrimination (needs to be fixed to 1 for Rasch model), item difficulty, and number of items
+# item discrimination (needs to be fixed to 1 for Rasch model), item difficulty, and number of items
 set.seed(5878)
 iSim1 <- cbind(runif(20,1,1), runif(20,0,1), rep(0,20))
-head(pa)
+head(iSim1)
 ```
 
 ```{r}
@@ -49,12 +33,12 @@ head(iSim2)
 ```
 
 ```{r}
-#write.matrix(iSim2,file="irtSIM.csv")
+# write.matrix(iSim2,file="irtSIM.csv")
 ```
 
 
 ```{r}
-#simD <- read.csv("/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Data/irtSIM.csv", sep = " ")
+# simD <- read.csv("/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/MalcomIRTshiny/Data/irtSIM.csv", sep = " ")
 ```
 
 IRT Analysis
@@ -70,39 +54,63 @@ head(iSim2)
 ```{r}
 unimodel <- mirt.model("latent = 1-20")
 
-fitRa <- mirt::mirt(data = iSim2,
+RaMod <- mirt::mirt(data = iSim2,
                model = unimodel,  # alternatively, we could also just specify model = 1 in this case
                itemtype = "Rasch",
-               SE = TRUE) # stops from printing the iterations
-fitRa
+               SE = TRUE) # Verbose = False stops from printing the iterations
+RaMod
 ```
 
 ```{r}
-summary(fitRa)
+summary(RaMod)
 ```
 
 ```{r}
-paramsRa <- coef(fitRa, IRTpars = TRUE, simplify = TRUE, nfact = 1)
-round(paramsRa$items, 2) # g = c = guessing parameter
+# paramsRa <- coef(RaMod, IRTpars = TRUE, simplify = TRUE, nfact = 1)
+# round(paramsRa$items, 2) # g = c = guessing parameter
 ```
 
+
+The "a" parameter is the value of the slope, set to 1 for Rasch model.
+The "b" parameter is the item location, which is its difficulty.
+The "g" parameter is the lower asymptote or guessing parameter.
+The "u" parameter is the upper asymptote.
+
+Will not be showcasing g or u in this initial tutorial for Rasch.
+
 ```{r}
-coef.rasch <- coef(fitRa, IRTpars=TRUE, simplify=TRUE)
+coef.rasch <- coef(RaMod, IRTpars=TRUE, simplify=TRUE)
 
 items.rasch <- as.data.frame(coef.rasch$items)
 
-print(as.table(items.rasch))
+IR2 <- items.rasch %>% select(-c(g, u))
+
+colnames(IR2)[1] <- "Item Discrimination Parameter"
+colnames(IR2)[2] <- "Item Location Parameter"
+
+print(IR2)
 ```
 
 ```{r}
-# IRT parameters from the estimated model. For this example, we are obtaining simplified output without SEs/CIs (simplify = TRUE) for conventional IRT parameters (IRTpar = TRUE).
-coef(fitRa,simplify = TRUE, IRTpar = TRUE)$items
+# IRT parameters from the estimated model. For this example, we are obtaining simplified output without # SEs/CIs (simplify = TRUE) for conventional IRT parameters (IRTpar = TRUE).
+# coef(RaMod,simplify = TRUE, IRTpar = TRUE)$items
 ```
-
 
 ```{r}
-M2(fitRa)
+M2(RaMod)
 ```
+
+```{r}
+plot(RaMod, type = "trace", theta_lim = c(-4,4), par.settings = list(superpose.line = list(col = "aquamarine1")), main="ICCs for All Items")
+```
+
+```{r}
+mirt::itemplot(RaMod, 1, type = "trace", shiny = FALSE, 
+               par.settings = list(superpose.line = list(col = "aquamarine1")), 
+               main="Item Characteristic Curve for Item 1"
+               )
+```
+
 
 
 

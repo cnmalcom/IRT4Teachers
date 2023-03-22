@@ -25,7 +25,7 @@ runtime: shiny
 library(flexdashboard)
 library(pacman)
 
-pacman::p_load("knitr", "TAM", "WrightMap", "RColorBrewer", "ltm", "psych", "flexdashboard", "leaflet", thematic, shiny, shinyalert, irtoys, xtable, tinytex, xfun, plotly, ShinyItemAnalysis, coda, mirt)
+pacman::p_load(knitr, RColorBrewer, flexdashboard, thematic, shiny, shinyalert, irtoys, xfun, coda, mirt, tidyverse)
 
 thematic::thematic_rmd()
 ```
@@ -54,7 +54,7 @@ Note: The table and graphics use simulated dichotomous data in a matrix format.
 
 ### Equations
 
-```{r}
+```{r shinEq}
 ui <- fluidPage(
   withMathJax(),
   helpText('The Equation for a Rasch Model'),
@@ -97,9 +97,11 @@ shinyApp(ui = ui, server = server)
 
 [Implementation of IRT in the Classroom](https://www.researchgate.net/publication/333399406_Determining_Test_Length_Precision_for_Economics_Testing_The_Implementation_of_IRT_Model_for_Classroom_Assessment)
 
+[IRT YouTube Tutorial](https://www.youtube.com/watch?v=Sxq3CwHajhM)
+
 Simulated Data File
 
-```{r}
+```{r emsim}
 # embed a single file
 
 xfun::embed_file('/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Data/irtSIM.csv')
@@ -121,73 +123,49 @@ iSim2 <- irtoys::sim(ip=iSim1, x=rnorm(30))
 head(iSim2)
 ```
 
-```{r m1, include=FALSE}
-Rmodel <- tam(iSim2)
+```{r renameC, include=FALSE}
+#rename columns for plotting
+colnames(iSim2) <- c("Item 1","Item 2","Item 3","Item 4","Item 5","Item 6","Item 7","Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14", "Item 15", "Item 16", "Item 17", "Item 18", "Item 19", "Item 20")
+
+head(iSim2)
 ```
 
-```{r f1, include=FALSE}
-FitRM <- tam.fit(Rmodel)
+```{r RM1, include=FALSE}
+unimodel <- mirt.model("latent = 1-20")
 
-summary(FitRM)
-```
-
-```{r Pability, include=FALSE}
-PersonAbility <- Rmodel$person$EAP
-```
-
-```{r Tthreshes, include=FALSE}
-Tthresh <- tam.threshold(Rmodel)
+RaMod <- mirt::mirt(data = iSim2,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # Verbose = False stops from printing the iterations
+RaMod
 ```
 
 ### IRT Analysis
 
-Running the TAM package in R provides the following output.
+Running the mirt package in R provides the following output.
 
-```{r}
+```{r C}
+coef.rasch <- coef(RaMod, IRTpars=TRUE, simplify=TRUE)
 
+items.rasch <- as.data.frame(coef.rasch$items)
+
+IR2 <- items.rasch %>% select(-c(g, u))
+
+colnames(IR2)[1] <- "Item Discrimination Parameter"
+colnames(IR2)[2] <- "Item Location Parameter"
+
+print(IR2)
 ```
 
+### ICC Plot
+
+Item Characteristic Curve (ICC) for Item 1
 
 ```{r}
-Rmodel
-
-Rmodel$EAP.rel
-
-Rmodel$xsi
-
-range(Fit$itemfit$Infit)
-```
-
-### ICC Plots
-
-Item Characteristic Curve (ICC) for Items 1-20
-
-```{r}
-plot(Rmodel$item$I1)
-```
-
-```{r}
-coda::traceplot(Rmodel, facet = F, legend = T) + scale_color_brewer(palette = "Set3")
-```
-
-
-### Wright Map
-
-Wright map for Items 1-20
-
-```{r}
-itemlevelcolors <- matrix(rep(brewer.pal(4, "Set2"), 8), byrow = TRUE, ncol = 4)
-
-wrightMap(PersonAbility,Tthresh,
-          show.thr.lab = FALSE,
-          thr.sym.cex = 2.5,
-          thr.sym.pch = 17,
-          thr.sym.col.fg = itemlevelcolors,
-          thr.sym.col.bg = itemlevelcolors,
-          main.title   = "Wright Map",
-          axis.logits  = "Latent Trait",
-          axis.persons = "Person Distribution",
-          axis.items   = "Survey Questions")
+mirt::itemplot(RaMod, 1, type = "trace", shiny = FALSE, 
+               par.settings = list(superpose.line = list(col = "aquamarine1")), 
+               main="Item Characteristic Curve for Item 1"
+               )
 ```
 
 # Run IRT
