@@ -1,0 +1,92 @@
+---
+title: "Trial IRT APP"
+author: "Cassie Malcom"
+date: "3/21/2023"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(shiny)
+library(dplyr)
+library(mirt)
+library(purrr)
+```
+
+```{r}
+simA <- read.csv(file = "/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Data/irtSIM.csv", sep = " ")
+```
+
+```{r shinE2}
+# define user interface object
+ui <- fluidPage(
+   titlePanel(p("Let's Analyze with IRT!", style = "color:teal")),
+  sidebarLayout(
+    sidebarPanel(
+     h3("Upload Your Data"), 
+      h5(em("Remember your data should be a matrix with dichotomous responses of 0 or 1 stored in a .csv file")),
+     fileInput(inputId = "filedata",
+          label = "Choose csv file",
+          accept = c(".csv")), 
+                 p("Made with", a("Shiny",
+                 href = "http://shiny.rstudio.com")),
+                 img(src = base64enc::dataURI(file = "/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Images/shinyLogo.png", 
+                                              mime = "image/png"))),
+  mainPanel("ICC Plot and Item Parameter Table",
+            plotOutput("irtICC"),
+            tableOutput("irtPT")
+            )
+  )
+)
+# define server() function
+server <- function(input, output){
+  mydata <- reactive({
+    if (input$dataset == "mydata")
+      return(NULL)
+    req(input$filedata)
+    read.csv(input$filedata$datapath,  header = FALSE)
+  })
+  output$irtICC <- renderPlot({
+    if (is.null(mydata()))
+      return(NULL)
+   
+    unimodel <- mirt::mirt.model("latent = 1-20")
+
+    myMod <- mirt::mirt(data = mydata,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # Verbose = False stops from printing the iterations
+    plot(myMod, type = "trace", theta_lim = c(-4,4), par.settings = list(superpose.line = list(col = "aquamarine1")), main="ICCs for All Items")
+  })
+  output$irtPT <- renderTable({
+    if (is.null(mydata()))
+      return(NULL)
+    
+    unimodel <- mirt::mirt.model("latent = 1-20")
+
+    myMod <- mirt::mirt(data = mydata,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # Verbose = False stops from printing the iterations
+    coef.rasch <- coef(myMod, IRTpars=TRUE, simplify=TRUE)
+
+    items.rasch <- as.data.frame(coef.rasch$items)
+
+    IR2 <- items.rasch %>% select(-c(g, u))
+
+    colnames(IR2)[1] <- "Item Discrimination Parameter"
+    colnames(IR2)[2] <- "Item Location Parameter"
+   print(IR2)
+  }, rownames = TRUE)
+ }
+
+# call to shinyApp() which returns the Shiny app
+shinyApp(ui = ui, server = server)
+```
+
+```{r}
+
+```
+

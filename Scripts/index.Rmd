@@ -36,19 +36,15 @@ thematic::thematic_rmd()
 
 **Introduction**
 
-*For this tutorial and associated Shiny app, we will be looking at dichotomous items only, which are scored 0 for incorrect and 1 for correct.*
+*For this tutorial and associated Shiny app, we will be looking at dichotomous items only, which have only two possible response categories that are scored 0 for incorrect and 1 for correct.*
 
-The Rasch model is used to explain the relationship between a latent trait, such as science learning, and a student's performance on a manifest variable, which is an item on a related assessment. The unit of analysis in this model is the item.
+The Rasch model is used to explain the relationship between a latent trait, such as science learning, and a student's performance on a manifest variable, which is an item on a related assessment. The unit of analysis in this model is the item. In particular, the Rasch model focuses on item difficulty.
 
-The equation for the Rasch model and key assumptions regarding its use are shown in the middle column. Below is an item characteristic curve, which shows the probability of getting an item right based on a student's ability level.
+The equation for the Rasch model and key assumptions regarding its use are shown in the middle column. The far right column provides some item parameters and an item characteristic curve (ICC) plot. 
 
-Hold for note on references...
+Note: For the data and plot provided the mirt package was used for the IRT analysis and the irtoys package was used to simulate dichotomous data in a matrix format.
 
-Note: The table and graphics use simulated dichotomous data in a matrix format.
-
-```{r}
-
-```
+![Learning about IRT](/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Images/svw92xte.jpg)
 
 ## Key Facts
 
@@ -99,7 +95,7 @@ shinyApp(ui = ui, server = server)
 
 [IRT YouTube Tutorial](https://www.youtube.com/watch?v=Sxq3CwHajhM)
 
-Simulated Data File
+Simulated Data File:
 
 ```{r emsim}
 # embed a single file
@@ -142,7 +138,9 @@ RaMod
 
 ### IRT Analysis
 
-Running the mirt package in R provides the following output.
+In the table below both the item discrimination parameter (alpha) and the item location parameter (delta) are provided for each of the 20 simulated items. Remember that alpha is set to 1 because of the Rasch model we are using and that delta estimates item difficulty.
+
+A larger delta parameter indicates an item of higher difficulty. For Item 1, a student with ability level 2.1 standard deviations above the average has only a 50% chance of answering the item correctly.
 
 ```{r C}
 coef.rasch <- coef(RaMod, IRTpars=TRUE, simplify=TRUE)
@@ -161,6 +159,10 @@ print(IR2)
 
 Item Characteristic Curve (ICC) for Item 1
 
+Below is an item characteristic curve, which shows the probability of a student getting an item right based on a student's latent ability level (theta). A student's location is estimated on the latent ability scale, which ranges here from -4 to 4, with 0 being average/medium ability.
+
+So for Item 1, a student with medium ability (theta = 0) in the latent trait being observed would have a probability (P) of 10% to get the item right.
+
 ```{r}
 mirt::itemplot(RaMod, 1, type = "trace", shiny = FALSE, 
                par.settings = list(superpose.line = list(col = "aquamarine1")), 
@@ -169,3 +171,66 @@ mirt::itemplot(RaMod, 1, type = "trace", shiny = FALSE,
 ```
 
 # Run IRT
+
+```{r shinE2}
+# define user interface object
+ui <- fluidPage(
+   titlePanel(p("Let's Analyze with IRT!", style = "color:teal")),
+  sidebarLayout(
+    sidebarPanel(
+     h3("Upload Your Data"), 
+      h5(em("Remember your data should be a matrix with dichotomous responses of 0 or 1 stored in a .csv file")),
+     fileInput(inputId = "filedata",
+          label = "Choose csv file",
+          accept = c(".csv")), 
+                 p("Made with", a("Shiny",
+                 href = "http://shiny.rstudio.com")),
+                 img(src = base64enc::dataURI(file = "/Users/cassiemalcom/Desktop/CM2020/23_Winter Term Classes/EDLD 640 DS Cap/IRT4Teachers/Images/shinyLogo.png", 
+                                              mime = "image/png"))),
+  mainPanel("ICC Plot and Item Parameter Table",
+            plotOutput('irtICC'),
+            tableOutput("irtPT")
+            )
+  )
+)
+# define server() function
+server <- function(input, output){
+  mydata <- reactive({
+    req(input$filedata)
+    read.csv(input$filedata$datapath,  header = FALSE)
+  })
+  output$irtICC <- renderPlot({
+   
+    unimodel <- mirt::mirt.model("latent = 1-20")
+
+    myMod <- mirt::mirt(data = mydata,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # Verbose = False stops from printing the iterations
+    plot(myMod, type = "trace", theta_lim = c(-4,4), par.settings = list(superpose.line = list(col = "aquamarine1")), main="ICCs for All Items")
+  })
+  output$irtPT <- renderTable({
+    
+    unimodel <- mirt::mirt.model("latent = 1-20")
+
+    myMod <- mirt::mirt(data = mydata,
+               model = unimodel,  # alternatively, we could also just specify model = 1 in this case
+               itemtype = "Rasch",
+               SE = TRUE) # Verbose = False stops from printing the iterations
+    coef.rasch <- coef(myMod, IRTpars=TRUE, simplify=TRUE)
+
+    items.rasch <- as.data.frame(coef.rasch$items)
+
+    IR2 <- items.rasch %>% select(-c(g, u))
+
+    colnames(IR2)[1] <- "Item Discrimination Parameter"
+    colnames(IR2)[2] <- "Item Location Parameter"
+   print(IR2)
+  }, rownames = TRUE)
+ }
+
+# call to shinyApp() which returns the Shiny app
+shinyApp(ui = ui, server = server)
+
+```
+
